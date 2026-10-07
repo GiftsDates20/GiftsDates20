@@ -529,6 +529,7 @@ class ProfileUpdate(BaseModel):
     bust_size: Optional[str] = None
     bust_type: Optional[str] = None
     penis_size: Optional[str] = None
+    dick_girth: Optional[str] = None
     date_price: Optional[int] = None
     video_rate: Optional[int] = None  # coins per minute, >= global video_rate
     video_calls_enabled: Optional[bool] = None  # if False, others cannot start a video call
@@ -2727,7 +2728,7 @@ class VipProfileReq(BaseModel):
     eye_color: str = ""
     hair_color: str = ""
     intimate_haircut: str = ""
-    breast_size: str = ""
+    breast_size: List[str] = []
     dick_size: str = ""
     dick_girth: str = ""
     show_on_main: bool = True  # when "separate", whether to also show a VIP hint on the main profile
@@ -2776,7 +2777,7 @@ async def put_vip_profile(req: VipProfileReq, user=Depends(get_current_user)):
            "eye_color": (req.eye_color or "").strip()[:60],
            "hair_color": (req.hair_color or "").strip()[:60],
            "intimate_haircut": (req.intimate_haircut or "").strip()[:60],
-           "breast_size": (req.breast_size or "").strip()[:60],
+           "breast_size": [s.strip()[:60] for s in (req.breast_size or []) if isinstance(s, str) and s.strip()][:12],
            "dick_size": (req.dick_size or "").strip()[:60],
            "dick_girth": (req.dick_girth or "").strip()[:60],
            "bio": (req.bio or "").strip()[:1000], "show_on_main": bool(req.show_on_main),

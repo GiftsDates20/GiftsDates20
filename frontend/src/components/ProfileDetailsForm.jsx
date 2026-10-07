@@ -16,6 +16,7 @@ export const HABITS = ["never", "sometimes", "often"];
 export const RELIGIONS = ["christian", "muslim", "jewish", "buddhist", "hindu", "spiritual", "atheist", "other", "prefer_not"];
 export const BUST = ["AA", "A", "B", "C", "D", "DD", "E", "F", "G", "H+"];
 export const BUST_TYPE = ["natural", "enhanced"];
+export const DICK_GIRTHS = ["Slim", "Average", "Thick", "Very thick"];
 export const SIZES = ["s", "m", "l", "xl"];
 
 export const GENDERS = ["female", "male", "trans_woman", "trans_man", "non_binary", "transgender", "transfeminine", "transmasculine", "cis_woman", "cis_man", "agender", "genderqueer", "genderfluid", "genderless", "gender_nonconforming", "gender_questioning", "bigender", "pangender", "demigender", "demigirl", "demiboy", "two_spirit", "intersex", "androgyne", "androgynous", "neutrois", "gender_variant", "third_gender", "polygender", "omnigender", "transsexual", "questioning", "other_gender", "prefer_not_gender"];
@@ -193,6 +194,7 @@ export default function ProfileDetailsForm({ f, setF, lang, gender }) {
           {gender !== "male" && <Field label={t("bust_size", lang)}><Sel testid="profile-bust-select" field="bust_size" value={f.bust_size} options={BUST} onChange={set("bust_size")} lang={lang} /></Field>}
           {gender !== "male" && <Field label={t("bust_type", lang)}><Sel testid="profile-bust-type-select" field="bust_type" value={f.bust_type} options={BUST_TYPE} onChange={set("bust_type")} lang={lang} /></Field>}
           {gender !== "female" && <Field label={t("penis_size", lang)}><Input data-testid="profile-penis-select" type="number" min="1" max="60" value={f.penis_size || ""} onChange={(e) => set("penis_size")(e.target.value)} placeholder={t("vip_dick_custom_ph", lang)} className="bg-white/5 border-white/10 mt-1" /></Field>}
+          {gender !== "female" && <Field label={t("penis_girth", lang)}><Sel testid="profile-penis-girth-select" field="dick_girth" value={f.dick_girth} options={DICK_GIRTHS} onChange={set("dick_girth")} lang={lang} /></Field>}
         </div>
       </div>
     </>

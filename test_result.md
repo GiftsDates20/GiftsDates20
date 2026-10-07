@@ -168,6 +168,30 @@ backend:
         agent: "testing"
         comment: "VERIFIED: bust_type field persists correctly through PATCH /api/auth/me and GET /api/auth/me. Test sequence: (1) Registered new user testuser_20261007012535@example.com, (2) PATCH with bust_type='natural' returned 200 and confirmed field set, (3) GET confirmed bust_type='natural', (4) PATCH with bust_type='enhanced' returned 200 and confirmed update, (5) GET confirmed bust_type='enhanced'. All 4 steps of the round-trip test passed successfully. Field is correctly defined in ProfileUpdate model (line 530) and handled by PATCH /api/auth/me endpoint (line 955)."
 
+  - task: "Profile dick_girth field persistence"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: dick_girth field persists correctly through PATCH /api/auth/me and GET /api/auth/me. Test sequence: (1) Registered new user testuser_20261007013342@example.com, (2) PATCH /api/auth/me with {dick_girth: 'Thick'} returned 200 and confirmed field set, (3) GET /api/auth/me confirmed dick_girth='Thick'. Field is correctly defined in ProfileUpdate model (server.py line 532) and properly handled by the PATCH /api/auth/me endpoint. All tests passed (2/2)."
+
+  - task: "VIP profile breast_size as LIST (multi-select)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: VIP breast_size field correctly handles LIST values (multi-select). Test sequence: (1) PUT /api/vip/profile with breast_size=['A', 'C', 'Natural'] returned 200 and saved correctly, (2) GET /api/auth/me confirmed vip.breast_size=['A', 'C', 'Natural'] with order preserved, (3) PUT with breast_size=[] returned 200 and saved as empty list without error. Field is correctly defined in VipProfileReq model (server.py line 2731) as List[str] and properly handled by PUT /api/vip/profile endpoint (line 2780). All tests passed (3/3)."
+
 frontend:
   - task: "Browse page - Kids multi-select filter"
     implemented: true
@@ -243,8 +267,8 @@ frontend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.3"
-  test_sequence: 4
+  version: "1.4"
+  test_sequence: 5
   run_ui: true
 
 test_plan:
@@ -267,3 +291,5 @@ agent_communication:
     message: "Completed verification of FIVE advanced filters in Full Premium filters section. ALL FIVE filters are correctly implemented as MULTI-SELECT comboboxes: (1) Kids filter (testid='filter-kids-select'), (2) Smoking filter (testid='filter-smoking-select'), (3) Drinking filter (testid='filter-drinking-select'), (4) Religion filter (testid='filter-religion-select'), (5) Zodiac filter (testid='filter-zodiac-select'). Each filter has role='combobox', chevron icon, button structure, and proper visibility. All use FilterMultiSelect component wrapping MultiSelect. Filters are locked for free accounts (expected). Screenshot saved: full_premium_filters_final.png. Test user created via API (testfilter@example.com) and saved to test_credentials.md. ISSUE FOUND: Registration form has runtime error 'Cannot read properties of null (reading focus)' when using keyboard input on birth date dropdowns - this is a focus management issue but does not block core functionality (API registration works). All filter verification tests passed (5/5)."
   - agent: "testing"
     message: "Completed backend smoke test for bust_type profile field. Test verified complete round-trip persistence: (1) Registered new user testuser_20261007012535@example.com with JWT token, (2) PATCH /api/auth/me with {bust_type: 'natural'} returned 200 and field was set, (3) GET /api/auth/me confirmed bust_type='natural', (4) PATCH /api/auth/me with {bust_type: 'enhanced'} returned 200 and field was updated, (5) GET /api/auth/me confirmed bust_type='enhanced'. All 5 tests passed (5/5). The bust_type field is correctly defined in ProfileUpdate model (server.py line 530) and properly handled by the PATCH /api/auth/me endpoint (line 955). Field persists correctly in MongoDB and is returned in profile responses."
+  - agent: "testing"
+    message: "Completed backend smoke test for profile/VIP field changes. TWO TESTS EXECUTED: (1) Profile dick_girth field - PASSED: PATCH /api/auth/me with {dick_girth: 'Thick'} returned 200, GET /api/auth/me confirmed persistence. Field defined in ProfileUpdate model (line 532). (2) VIP breast_size as LIST - PASSED: PUT /api/vip/profile with breast_size=['A', 'C', 'Natural'] returned 200 and saved correctly, GET /api/auth/me confirmed vip.breast_size as list with order preserved, empty list [] also saves without error. Field defined in VipProfileReq model (line 2731) as List[str]. Both tests passed (2/2). No Stripe/Twilio/email tested as requested."

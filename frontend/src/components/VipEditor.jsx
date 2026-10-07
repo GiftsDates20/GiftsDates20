@@ -93,7 +93,7 @@ export default function VipEditor() {
   const [sepEye, setSepEye] = useState(v.eye_color || "");
   const [sepHair, setSepHair] = useState(v.hair_color || "");
   const [sepHaircut, setSepHaircut] = useState(v.intimate_haircut || "");
-  const [sepBreast, setSepBreast] = useState(v.breast_size || "");
+  const [sepBreast, setSepBreast] = useState(Array.isArray(v.breast_size) ? v.breast_size : (v.breast_size ? [v.breast_size] : []));
   const [sepDick, setSepDick] = useState(v.dick_size || "");
   const [sepDickGirth, setSepDickGirth] = useState(v.dick_girth || "");
   const [showOnMain, setShowOnMain] = useState(v.show_on_main !== false);
@@ -184,7 +184,7 @@ export default function VipEditor() {
         eye_color: (sepEye || "").trim(),
         hair_color: (sepHair || "").trim(),
         intimate_haircut: (sepHaircut || "").trim(),
-        breast_size: (sepBreast || "").trim(),
+        breast_size: Array.isArray(sepBreast) ? sepBreast : (sepBreast ? [sepBreast] : []),
         dick_size: (sepDick || "").trim(),
         dick_girth: (sepDickGirth || "").trim(),
         show_on_main: showOnMain,
@@ -296,7 +296,21 @@ export default function VipEditor() {
           <AttrSelect testid="vip-eye" label={t("vip_eye_color", lang)} value={sepEye} onChange={setSepEye} options={EYE_COLORS} lang={lang} />
           <AttrSelect testid="vip-hair" label={t("vip_hair_color", lang)} value={sepHair} onChange={setSepHair} options={HAIR_COLORS} lang={lang} />
           <AttrSelect testid="vip-haircut" label={t("vip_intimate_haircut", lang)} value={sepHaircut} onChange={setSepHaircut} options={INTIMATE_HAIRCUTS} lang={lang} />
-          <AttrSelect testid="vip-breast" label={t("vip_breast_size", lang)} value={sepBreast} onChange={setSepBreast} options={BREAST_SIZES} lang={lang} />
+          <div>
+            <label className="text-xs text-slate-400">{t("vip_breast_size", lang)}</label>
+            <div className="mt-1">
+              <MultiSelect
+                testid="vip-breast"
+                value={Array.isArray(sepBreast) ? sepBreast : (sepBreast ? [sepBreast] : [])}
+                onChange={setSepBreast}
+                options={BREAST_SIZES.map(o => ({ value: o, label: o }))}
+                placeholder={t("not_specified_short", lang)}
+                searchPlaceholder={t("search", lang)}
+                emptyText={t("no_results", lang)}
+                accent="amber"
+              />
+            </div>
+          </div>
           <div>
             <label className="text-xs text-slate-400">{t("vip_dick_size", lang)}</label>
             <Input data-testid="vip-dick" type="number" min="1" max="60" value={(sepDick || "").trim()} onChange={(e) => setSepDick(e.target.value)} placeholder={t("vip_dick_custom_ph", lang)} className="bg-white/5 border-white/10 mt-1" />

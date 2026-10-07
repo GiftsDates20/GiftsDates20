@@ -193,12 +193,13 @@ export default function ProfileView() {
                 <Row label={t("drinking", lang)} value={optLabel("drinking", p.drinking, lang)} testid="pv-drinking" />
               </div>
             )}
-            {(p.bust_size || p.bust_type || p.penis_size) && (
+            {(p.bust_size || p.bust_type || p.penis_size || p.dick_girth) && (
               <div className="glass rounded-2xl p-5 border border-rose-500/20" data-testid="profile-view-intimate">
                 <h3 className="font-serif-luxe text-xl mb-2">{t("intimate", lang)}</h3>
                 <Row label={t("bust_size", lang)} value={p.bust_size} testid="pv-bust" />
                 <Row label={t("bust_type", lang)} value={p.bust_type ? t("bust_" + p.bust_type, lang) : ""} testid="pv-bust-type" />
                 <Row label={t("penis_size", lang)} value={p.penis_size} testid="pv-penis" />
+                <Row label={t("penis_girth", lang)} value={p.dick_girth} testid="pv-girth" />
               </div>
             )}
           </div>

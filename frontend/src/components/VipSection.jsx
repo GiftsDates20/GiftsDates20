@@ -137,7 +137,7 @@ export default function VipSection({ userId, name, preview }) {
         <div className="text-sm text-slate-300" data-testid="vip-services-note-view"><span className="text-slate-500">{t("vip_services", lang)}: </span>{v.services_note}</div>
       )}
 
-      {(v.height || v.weight || v.eye_color || v.hair_color || v.intimate_haircut || v.breast_size || v.dick_size || v.dick_girth) && (
+      {(v.height || v.weight || v.eye_color || v.hair_color || v.intimate_haircut || (Array.isArray(v.breast_size) ? v.breast_size.length : v.breast_size) || v.dick_size || v.dick_girth) && (
         <div className="rounded-xl border border-white/10 bg-white/5 p-4" data-testid="vip-view-appearance">
           <div className="text-sm font-semibold text-amber-200 mb-2">{t("vip_appearance", lang)}</div>
           <div className="grid grid-cols-2 gap-x-4">
@@ -147,7 +147,7 @@ export default function VipSection({ userId, name, preview }) {
               [t("vip_eye_color", lang), v.eye_color],
               [t("vip_hair_color", lang), v.hair_color],
               [t("vip_intimate_haircut", lang), v.intimate_haircut],
-              [t("vip_breast_size", lang), v.breast_size],
+              [t("vip_breast_size", lang), Array.isArray(v.breast_size) ? v.breast_size.join(", ") : v.breast_size],
               [t("vip_dick_size", lang), v.dick_size],
               [t("vip_dick_girth", lang), v.dick_girth],
             ].filter(([, val]) => val).map(([label, val]) => (
