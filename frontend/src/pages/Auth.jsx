@@ -11,8 +11,6 @@ import { useApp } from "../context/AppContext";
 import { t } from "../lib/i18n";
 import { LANGUAGES, ZODIAC_EMOJI } from "../lib/i18n";
 import SpinWheel from "../components/SpinWheel";
-import CountrySelect from "../components/CountrySelect";
-import CitySelect from "../components/CitySelect";
 import MultiSelect from "../components/MultiSelect";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "../components/ui/dropdown-menu";
 import { Eye, EyeOff, MapPin, Loader2, ChevronDown } from "lucide-react";
@@ -55,6 +53,7 @@ export default function Auth() {
   const [f, setF] = useState({ email: "", password: "", name: "", age: 25, gender: "", genders: [], interested_in: "", orientation: "", orientations: [], city: "", country: "", bio: "", phone: "", sms_notifications_enabled: false, referral_code: sp.get("ref") || "", language: lang, birth_day: "", birth_month: "", birth_year: "", lat: null, lng: null });
   const [busy, setBusy] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [locError, setLocError] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showSpin, setShowSpin] = useState(false);
@@ -69,10 +68,11 @@ export default function Auth() {
 
   const detectMyLocation = async () => {
     setLocating(true);
+    setLocError(false);
     try {
       const { lat, lng, city, country } = await detectLocation(lang);
-      const normCountry = normalizeCountry(country);
-      const nearestCity = matchCuratedCity(city, normCountry);
+      const normCountry = normalizeCountry(country) || country || "";
+      const nearestCity = matchCuratedCity(city, normCountry) || city || "";
       setF((prev) => ({
         ...prev,
         lat,
@@ -80,8 +80,15 @@ export default function Auth() {
         country: normCountry || prev.country,
         city: nearestCity || prev.city,
       }));
-      toast.success(t("location_detected", lang) + (nearestCity ? ` · ${nearestCity}${normCountry ? ", " + normCountry : ""}` : ""));
+      if (lat != null && (nearestCity || normCountry)) {
+        setLocError(false);
+        toast.success(t("location_detected", lang) + (nearestCity ? ` · ${nearestCity}${normCountry ? ", " + normCountry : ""}` : ""));
+      } else {
+        setLocError(true);
+        toast.error(t("location_failed", lang));
+      }
     } catch {
+      setLocError(true);
       toast.error(t("location_failed", lang));
     } finally {
       setLocating(false);
@@ -249,27 +256,32 @@ export default function Auth() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs text-slate-400">{t("country", lang)} <span className="text-rose-400">*</span></Label>
-                  <CountrySelect testid="auth-country-select" value={f.country} onChange={v => setF({ ...f, country: v, city: "" })} lang={lang} /></div>
-                <div><Label className="text-xs text-slate-400">{t("city", lang)} <span className="text-rose-400">*</span></Label>
-                  <CitySelect testid="auth-city-select" required value={f.city} country={f.country} onChange={v => setF({ ...f, city: v })} lang={lang} /></div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2" data-testid="auth-location-box">
+                <Label className="text-xs text-slate-400">{t("your_location", lang)} <span className="text-rose-400">*</span></Label>
+                {f.country && f.city ? (
+                  <p data-testid="auth-detected-location" className="text-sm text-emerald-300 flex items-center gap-1.5">
+                    <MapPin size={14} /> {f.city}{f.country ? `, ${f.country}` : ""}
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-400">{t("signup_location_required", lang)}</p>
+                )}
+                <button
+                  type="button"
+                  data-testid="auth-detect-location-button"
+                  onClick={detectMyLocation}
+                  disabled={locating}
+                  className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-lg border border-sky-500/40 bg-sky-500/10 text-sky-200 text-sm hover:bg-sky-500/20 transition-colors disabled:opacity-60"
+                >
+                  {locating ? <Loader2 size={15} className="animate-spin" /> : <MapPin size={15} />}
+                  {locating ? t("detecting_location", lang) : (f.country && f.city ? t("redetect_location", lang) : (locError ? t("retry_detect", lang) : t("detect_location", lang)))}
+                </button>
+                {locError && <p data-testid="auth-location-error" className="text-[11px] text-rose-300">{t("location_failed_retry", lang)}</p>}
+                {f.lat != null && f.lng != null && (
+                  <p data-testid="auth-location-coords" className="text-[11px] text-emerald-300/70 flex items-center gap-1">
+                    <MapPin size={11} /> {f.lat.toFixed(3)}, {f.lng.toFixed(3)}
+                  </p>
+                )}
               </div>
-              <button
-                type="button"
-                data-testid="auth-detect-location-button"
-                onClick={detectMyLocation}
-                disabled={locating}
-                className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-lg border border-sky-500/40 bg-sky-500/10 text-sky-200 text-sm hover:bg-sky-500/20 transition-colors disabled:opacity-60"
-              >
-                {locating ? <Loader2 size={15} className="animate-spin" /> : <MapPin size={15} />}
-                {locating ? t("detecting_location", lang) : t("detect_location", lang)}
-              </button>
-              {f.lat != null && f.lng != null && (
-                <p data-testid="auth-location-coords" className="text-[11px] text-emerald-300/80 flex items-center gap-1 -mt-1">
-                  <MapPin size={11} /> {f.lat.toFixed(3)}, {f.lng.toFixed(3)}
-                </p>
-              )}
               <div><Label className="text-xs text-slate-400">{t("bio", lang)}</Label>
                 <Textarea data-testid="auth-bio-input" rows={2} value={f.bio} onChange={e => setF({ ...f, bio: e.target.value })} className="bg-white/5 border-white/10 mt-1" /></div>
               <div><Label className="text-xs text-slate-400">{t("phone_optional", lang)}</Label>
@@ -300,7 +312,7 @@ export default function Auth() {
             </>
           )}
 
-          <Button data-testid="auth-submit-button" disabled={busy || (mode === "register" && !agreed)} type="submit" className="w-full rose-btn text-white border-0 h-11 mt-2">
+          <Button data-testid="auth-submit-button" disabled={busy || (mode === "register" && (!agreed || !f.country || !f.city || f.lat == null))} type="submit" className="w-full rose-btn text-white border-0 h-11 mt-2">
             {busy ? "…" : (mode === "login" ? t("login", lang) : t("register", lang))}
           </Button>
         </form>

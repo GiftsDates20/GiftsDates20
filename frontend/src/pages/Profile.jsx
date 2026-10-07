@@ -27,6 +27,7 @@ export default function Profile() {
   const nav = useNavigate();
   const isPremium = user?.premium_until && new Date(user.premium_until) > new Date();
   const isVip = user?.vip_until && new Date(user.vip_until) > new Date();
+  const canEditIdentity = !!(isPremium || isVip);
   const [f, setF] = useState(() => ({ name: user?.name, age: user?.age, bio: user?.bio, city: user?.city, country: user?.country,
     lat: user?.lat ?? null, lng: user?.lng ?? null, hide_distance: user?.hide_distance ?? false,
     video_calls_enabled: user?.video_calls_enabled ?? true,
@@ -109,16 +110,28 @@ export default function Profile() {
           <h2 className="font-serif-luxe text-2xl">{t("about_me", lang)}</h2>
           <div className="grid grid-cols-2 gap-3">
             <div><Label className="text-xs text-slate-400">{t("name", lang)}</Label>
-              <Input data-testid="profile-name-input" value={f.name || ""} onChange={e => setF({ ...f, name: e.target.value })} className="bg-white/5 border-white/10 mt-1"/></div>
+              <Input data-testid="profile-name-input" value={f.name || ""} disabled={!canEditIdentity} onChange={e => setF({ ...f, name: e.target.value })} className="bg-white/5 border-white/10 mt-1 disabled:opacity-60 disabled:cursor-not-allowed"/></div>
             <div><Label className="text-xs text-slate-400">{t("age", lang)}</Label>
-              <Input data-testid="profile-age-input" type="number" value={f.age || 18} onChange={e => setF({ ...f, age: parseInt(e.target.value||18) })} className="bg-white/5 border-white/10 mt-1"/></div>
+              <Input data-testid="profile-age-input" type="number" value={f.age || 18} disabled={!canEditIdentity} onChange={e => setF({ ...f, age: parseInt(e.target.value||18) })} className="bg-white/5 border-white/10 mt-1 disabled:opacity-60 disabled:cursor-not-allowed"/></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label className="text-xs text-slate-400">{t("country", lang)}</Label>
-              <CountrySelect testid="profile-country-select" value={f.country} onChange={v => setF({ ...f, country: v, city: "" })} lang={lang} /></div>
+              {canEditIdentity
+                ? <CountrySelect testid="profile-country-select" value={f.country} onChange={v => setF({ ...f, country: v, city: "" })} lang={lang} />
+                : <div data-testid="profile-country-readonly" className="h-10 mt-1 px-3 flex items-center rounded-md bg-white/5 border border-white/10 text-sm text-slate-300 opacity-70">{f.country || "—"}</div>}
+            </div>
             <div><Label className="text-xs text-slate-400">{t("city", lang)}</Label>
-              <CitySelect testid="profile-city-select" value={f.city} country={f.country} onChange={v => setF({ ...f, city: v })} lang={lang} /></div>
+              {canEditIdentity
+                ? <CitySelect testid="profile-city-select" value={f.city} country={f.country} onChange={v => setF({ ...f, city: v })} lang={lang} />
+                : <div data-testid="profile-city-readonly" className="h-10 mt-1 px-3 flex items-center rounded-md bg-white/5 border border-white/10 text-sm text-slate-300 opacity-70">{f.city || "—"}</div>}
+            </div>
           </div>
+          {!canEditIdentity && (
+            <button type="button" data-testid="profile-identity-premium-hint" onClick={() => nav("/wallet?premium=1")}
+              className="w-full flex items-center gap-2 text-left rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 hover:bg-amber-500/15 transition-colors">
+              <Lock size={14} className="shrink-0 text-amber-300" /> {t("premium_edit_locked", lang)}
+            </button>
+          )}
           <button
             type="button"
             data-testid="profile-detect-location-button"
