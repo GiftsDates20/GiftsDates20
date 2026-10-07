@@ -156,6 +156,18 @@ backend:
         agent: "testing"
         comment: "GET /api/auth/me successfully returns user profile when authenticated with Bearer token. Token authentication working correctly."
 
+  - task: "Profile bust_type field persistence"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: bust_type field persists correctly through PATCH /api/auth/me and GET /api/auth/me. Test sequence: (1) Registered new user testuser_20261007012535@example.com, (2) PATCH with bust_type='natural' returned 200 and confirmed field set, (3) GET confirmed bust_type='natural', (4) PATCH with bust_type='enhanced' returned 200 and confirmed update, (5) GET confirmed bust_type='enhanced'. All 4 steps of the round-trip test passed successfully. Field is correctly defined in ProfileUpdate model (line 530) and handled by PATCH /api/auth/me endpoint (line 955)."
+
 frontend:
   - task: "Browse page - Kids multi-select filter"
     implemented: true
@@ -231,8 +243,8 @@ frontend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.2"
-  test_sequence: 3
+  version: "1.3"
+  test_sequence: 4
   run_ui: true
 
 test_plan:
@@ -253,3 +265,5 @@ agent_communication:
     message: "Completed Browse page filter verification test. Both requested changes are correctly implemented: (A) 'Looking for' filter is now a MULTI-SELECT dropdown (combobox with chips) using MultiSelect component, NOT a single-select dropdown. (B) 'Distance' filter is now a SLIDER with thumb and value label using Radix UI Slider, NOT a dropdown. Both filters render correctly in the Premium-Lite filters section. Filters are locked for free accounts (expected behavior). Screenshots saved: premium_lite_filters.png and browse_filters_expanded.png. All tests passed successfully."
   - agent: "testing"
     message: "Completed verification of FIVE advanced filters in Full Premium filters section. ALL FIVE filters are correctly implemented as MULTI-SELECT comboboxes: (1) Kids filter (testid='filter-kids-select'), (2) Smoking filter (testid='filter-smoking-select'), (3) Drinking filter (testid='filter-drinking-select'), (4) Religion filter (testid='filter-religion-select'), (5) Zodiac filter (testid='filter-zodiac-select'). Each filter has role='combobox', chevron icon, button structure, and proper visibility. All use FilterMultiSelect component wrapping MultiSelect. Filters are locked for free accounts (expected). Screenshot saved: full_premium_filters_final.png. Test user created via API (testfilter@example.com) and saved to test_credentials.md. ISSUE FOUND: Registration form has runtime error 'Cannot read properties of null (reading focus)' when using keyboard input on birth date dropdowns - this is a focus management issue but does not block core functionality (API registration works). All filter verification tests passed (5/5)."
+  - agent: "testing"
+    message: "Completed backend smoke test for bust_type profile field. Test verified complete round-trip persistence: (1) Registered new user testuser_20261007012535@example.com with JWT token, (2) PATCH /api/auth/me with {bust_type: 'natural'} returned 200 and field was set, (3) GET /api/auth/me confirmed bust_type='natural', (4) PATCH /api/auth/me with {bust_type: 'enhanced'} returned 200 and field was updated, (5) GET /api/auth/me confirmed bust_type='enhanced'. All 5 tests passed (5/5). The bust_type field is correctly defined in ProfileUpdate model (server.py line 530) and properly handled by the PATCH /api/auth/me endpoint (line 955). Field persists correctly in MongoDB and is returned in profile responses."

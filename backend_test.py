@@ -170,6 +170,100 @@ def test_authenticated_me(token):
         log(f"  ❌ FAILED: {str(e)}")
         return False
 
+def test_bust_type_field(token):
+    """Test bust_type field persistence via PATCH and GET /api/auth/me."""
+    log("Testing bust_type field round-trip...")
+    
+    try:
+        # Step 1: PATCH with bust_type = "natural"
+        log("  Step 1: Setting bust_type to 'natural'...")
+        response = requests.patch(
+            f"{BACKEND_URL}/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"bust_type": "natural"},
+            timeout=10
+        )
+        log(f"    Status: {response.status_code}")
+        
+        if response.status_code != 200:
+            log(f"    ❌ FAILED: Expected 200, got {response.status_code}")
+            log(f"    Response: {response.text}")
+            return False
+        
+        data = response.json()
+        if data.get("bust_type") != "natural":
+            log(f"    ❌ FAILED: PATCH response bust_type is '{data.get('bust_type')}', expected 'natural'")
+            return False
+        log(f"    ✅ PATCH successful, bust_type set to 'natural'")
+        
+        # Step 2: GET to verify bust_type = "natural"
+        log("  Step 2: Verifying bust_type is 'natural' via GET...")
+        response = requests.get(
+            f"{BACKEND_URL}/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10
+        )
+        log(f"    Status: {response.status_code}")
+        
+        if response.status_code != 200:
+            log(f"    ❌ FAILED: Expected 200, got {response.status_code}")
+            log(f"    Response: {response.text}")
+            return False
+        
+        data = response.json()
+        if data.get("bust_type") != "natural":
+            log(f"    ❌ FAILED: GET response bust_type is '{data.get('bust_type')}', expected 'natural'")
+            return False
+        log(f"    ✅ GET confirmed bust_type is 'natural'")
+        
+        # Step 3: PATCH with bust_type = "enhanced"
+        log("  Step 3: Updating bust_type to 'enhanced'...")
+        response = requests.patch(
+            f"{BACKEND_URL}/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"bust_type": "enhanced"},
+            timeout=10
+        )
+        log(f"    Status: {response.status_code}")
+        
+        if response.status_code != 200:
+            log(f"    ❌ FAILED: Expected 200, got {response.status_code}")
+            log(f"    Response: {response.text}")
+            return False
+        
+        data = response.json()
+        if data.get("bust_type") != "enhanced":
+            log(f"    ❌ FAILED: PATCH response bust_type is '{data.get('bust_type')}', expected 'enhanced'")
+            return False
+        log(f"    ✅ PATCH successful, bust_type updated to 'enhanced'")
+        
+        # Step 4: GET to verify bust_type = "enhanced"
+        log("  Step 4: Verifying bust_type is 'enhanced' via GET...")
+        response = requests.get(
+            f"{BACKEND_URL}/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10
+        )
+        log(f"    Status: {response.status_code}")
+        
+        if response.status_code != 200:
+            log(f"    ❌ FAILED: Expected 200, got {response.status_code}")
+            log(f"    Response: {response.text}")
+            return False
+        
+        data = response.json()
+        if data.get("bust_type") != "enhanced":
+            log(f"    ❌ FAILED: GET response bust_type is '{data.get('bust_type')}', expected 'enhanced'")
+            return False
+        log(f"    ✅ GET confirmed bust_type is 'enhanced'")
+        
+        log("  ✅ PASSED: bust_type field persists correctly through PATCH and GET")
+        return True
+        
+    except Exception as e:
+        log(f"  ❌ FAILED: {str(e)}")
+        return False
+
 def main():
     """Run all authentication smoke tests."""
     log("=" * 60)
@@ -182,7 +276,8 @@ def main():
         "health_check": False,
         "register": False,
         "login": False,
-        "authenticated_me": False
+        "authenticated_me": False,
+        "bust_type_field": False
     }
     
     # Test 1: Health check
@@ -211,6 +306,10 @@ def main():
     
     # Test 4: Authenticated /me endpoint
     results["authenticated_me"] = test_authenticated_me(login_token)
+    log("")
+    
+    # Test 5: bust_type field persistence
+    results["bust_type_field"] = test_bust_type_field(login_token)
     log("")
     
     # Print summary

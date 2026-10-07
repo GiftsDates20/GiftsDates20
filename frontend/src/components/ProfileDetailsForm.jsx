@@ -14,7 +14,8 @@ export const INCOMES = ["custom", "prefer_not"];
 export const KIDS = ["none", "have", "want", "no_want"];
 export const HABITS = ["never", "sometimes", "often"];
 export const RELIGIONS = ["christian", "muslim", "jewish", "buddhist", "hindu", "spiritual", "atheist", "other", "prefer_not"];
-export const BUST = ["AA", "A", "B", "C", "D", "DD", "E", "F", "G", "H+", "Natural", "Enhanced"];
+export const BUST = ["AA", "A", "B", "C", "D", "DD", "E", "F", "G", "H+"];
+export const BUST_TYPE = ["natural", "enhanced"];
 export const SIZES = ["s", "m", "l", "xl"];
 
 export const GENDERS = ["female", "male", "trans_woman", "trans_man", "non_binary", "transgender", "transfeminine", "transmasculine", "cis_woman", "cis_man", "agender", "genderqueer", "genderfluid", "genderless", "gender_nonconforming", "gender_questioning", "bigender", "pangender", "demigender", "demigirl", "demiboy", "two_spirit", "intersex", "androgyne", "androgynous", "neutrois", "gender_variant", "third_gender", "polygender", "omnigender", "transsexual", "questioning", "other_gender", "prefer_not_gender"];
@@ -26,7 +27,7 @@ export const optLabel = (field, v, lang) => {
   if (v === "prefer_not") return t("prefer_not", lang);
   if (field === "income" && v === "custom") return `${t("income_custom_value", lang)} ($/month)`;
   if (field === "gender") return t(v, lang);
-  const prefix = { relationship_intent: "intent_", income: "income_", kids: "kids_", smoking: "habit_", drinking: "habit_", religion: "rel_", penis_size: "size_", orientation: "or_" }[field];
+  const prefix = { relationship_intent: "intent_", income: "income_", kids: "kids_", smoking: "habit_", drinking: "habit_", religion: "rel_", penis_size: "size_", orientation: "or_", bust_type: "bust_" }[field];
   return prefix ? t(prefix + v, lang) : v;
 };
 
@@ -190,6 +191,7 @@ export default function ProfileDetailsForm({ f, setF, lang, gender }) {
         <h2 className="font-serif-luxe text-2xl">{t("intimate", lang)}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {gender !== "male" && <Field label={t("bust_size", lang)}><Sel testid="profile-bust-select" field="bust_size" value={f.bust_size} options={BUST} onChange={set("bust_size")} lang={lang} /></Field>}
+          {gender !== "male" && <Field label={t("bust_type", lang)}><Sel testid="profile-bust-type-select" field="bust_type" value={f.bust_type} options={BUST_TYPE} onChange={set("bust_type")} lang={lang} /></Field>}
           {gender !== "female" && <Field label={t("penis_size", lang)}><Input data-testid="profile-penis-select" type="number" min="1" max="60" value={f.penis_size || ""} onChange={(e) => set("penis_size")(e.target.value)} placeholder={t("vip_dick_custom_ph", lang)} className="bg-white/5 border-white/10 mt-1" /></Field>}
         </div>
       </div>

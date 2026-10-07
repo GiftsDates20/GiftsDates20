@@ -527,6 +527,7 @@ class ProfileUpdate(BaseModel):
     drinking: Optional[str] = None
     religion: Optional[str] = None
     bust_size: Optional[str] = None
+    bust_type: Optional[str] = None
     penis_size: Optional[str] = None
     date_price: Optional[int] = None
     video_rate: Optional[int] = None  # coins per minute, >= global video_rate
