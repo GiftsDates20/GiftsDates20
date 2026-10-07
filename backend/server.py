@@ -1513,12 +1513,12 @@ async def list_profiles(
     online_nearby = False  # "Online nearby" filter removed from search
     # Free: country, city, gender, min/max age.
     # Premium-Lite (and above): looking for (intent), distance, available on date, date price up to.
-    lite_used = any(v not in (None, "", "all", False, 0) for v in (intent, max_distance, available_date, max_date_price))
+    lite_used = any(v not in (None, "", "all", False, 0) for v in (intent, max_distance, available_date, max_date_price, video_calls))
     if lite_used and not has_premium(user): raise HTTPException(403, "PREMIUM_LITE_REQUIRED")
     # Full Premium / VIP: search by name + every other advanced filter.
     advanced_used = any(v not in (None, "", "all", False) for v in (q, hobbies, min_income, max_income, min_penis, max_penis, min_height, max_height, kids, smoking, religion, drinking, income, language, orientation,
                                                                    hobby, job, min_weight, max_weight, bust_size, penis_size, premium_only, with_photos, verified_only, online_now,
-                                                                   zodiac, video_calls,
+                                                                   zodiac,
                                                                    vip_categories, vip_min_price, vip_max_price, vip_date))
     if advanced_used and not (is_premium(user) or is_vip(user)): raise HTTPException(403, "PREMIUM_REQUIRED")
     vip_adv = bool(vip_categories or vip_services or (vip_min_price is not None) or (vip_max_price is not None) or vip_date
@@ -1540,8 +1540,12 @@ async def list_profiles(
         if glist:
             conds.append({"$or": [{"gender": {"$in": glist}}, {"genders": {"$in": glist}}]})
     if q: conds.append({"$or": [{"name": {"$regex": q, "$options": "i"}}, {"bio": {"$regex": q, "$options": "i"}}]})
-    for field, val in (("kids", kids), ("smoking", smoking), ("religion", religion),
-                       ("drinking", drinking), ("income", income), ("penis_size", penis_size)):
+    # Multi-select: kids/smoking/drinking/religion accept a comma-separated list, match ANY.
+    for field, val in (("kids", kids), ("smoking", smoking), ("religion", religion), ("drinking", drinking)):
+        if val and val != "all":
+            vlist = [x.strip() for x in val.split(",") if x.strip() and x.strip() != "all"]
+            if vlist: conds.append({field: {"$in": vlist}})
+    for field, val in (("income", income), ("penis_size", penis_size)):
         if val and val != "all": conds.append({field: val})
     if bust_size and bust_size != "all":
         # Multi-select: comma-separated bust sizes, match ANY
@@ -1550,7 +1554,11 @@ async def list_profiles(
     # Orientation & relationship-intent are multi-select profile fields (stored as arrays),
     # with a legacy single value kept for backward compatibility — match either.
     if intent and intent != "all":
-        conds.append({"$or": [{"relationship_intent": intent}, {"relationship_intent": {"$in": [intent]}}]})
+        # Multi-select: comma-separated list, match profiles whose intent is ANY of the chosen values.
+        # $in matches both a legacy single-string field and an array field.
+        ilist = [i.strip() for i in intent.split(",") if i.strip() and i.strip() != "all"]
+        if ilist:
+            conds.append({"relationship_intent": {"$in": ilist}})
     if orientation and orientation != "all":
         # Multi-select: comma-separated list, match profiles having ANY of the chosen orientations
         olist = [o.strip() for o in orientation.split(",") if o.strip() and o.strip() != "all"]
@@ -1560,7 +1568,10 @@ async def list_profiles(
         # Multi-select: comma-separated language codes, match profiles speaking ANY of them
         llist = [l.strip() for l in language.split(",") if l.strip() and l.strip() != "all"]
         if llist: conds.append({"languages_spoken": {"$in": llist}})
-    if zodiac and zodiac != "all": conds.append({"zodiac": zodiac})
+    if zodiac and zodiac != "all":
+        # Multi-select: comma-separated zodiac signs, match ANY
+        zlist = [z.strip() for z in zodiac.split(",") if z.strip() and z.strip() != "all"]
+        if zlist: conds.append({"zodiac": {"$in": zlist}})
     if available_date: conds.append({"availability": available_date})
     if video_calls: conds.append({"video_calls_enabled": {"$ne": False}})
     if hobby: conds.append({"hobbies": {"$elemMatch": {"$regex": re.escape(hobby), "$options": "i"}}})

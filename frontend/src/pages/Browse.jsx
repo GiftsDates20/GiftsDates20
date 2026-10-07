@@ -23,6 +23,7 @@ import CitySelect from "../components/CitySelect";
 import MultiSelect from "../components/MultiSelect";
 import SavedSearches from "../components/SavedSearches";
 import RangeSlider from "../components/RangeSlider";
+import * as SliderPrimitive from "@radix-ui/react-slider";
 import { HOBBY_SELECT_GROUPS, HOBBY_MAX } from "../lib/hobbies";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
 
@@ -32,7 +33,7 @@ const VIP_EYE_COLORS = ["Brown", "Hazel", "Amber", "Green", "Blue", "Grey", "Bla
 const VIP_HAIR_COLORS = ["Black", "Dark brown", "Brown", "Light brown", "Blonde", "Platinum blonde", "Red", "Auburn", "Ginger", "Grey", "White", "Dyed / colourful"];
 const VIP_HAIRCUTS = ["Fully shaved", "Trimmed", "Landing strip", "Bikini line", "Natural / full", "Triangle"];
 const VIP_BREAST_SIZES = ["AA", "A", "B", "C", "D", "DD", "E", "F", "G", "H+", "Natural", "Enhanced"];
-const EXTRA_DEFAULT = { intent: ALL, kids: ALL, smoking: ALL, drinking: ALL, religion: ALL, min_income: "", max_income: "", languages: [], bust_sizes: [], min_penis: "", max_penis: "", orientations: [], zodiac: ALL,
+const EXTRA_DEFAULT = { intent: [], kids: [], smoking: [], drinking: [], religion: [], min_income: "", max_income: "", languages: [], bust_sizes: [], min_penis: "", max_penis: "", orientations: [], zodiac: [],
   min_height: "", max_height: "", min_weight: "", max_weight: "", hobbies: [], job: "", max_date_price: "", available_date: "", video_calls: false, premium_only: false, vip_only: false, with_photos: false, verified_only: false, online_now: false,
   vip_categories: [], vip_services: [], vip_min_price: "", vip_max_price: "", vip_date: "",
   vip_eye_color: ALL, vip_hair_color: ALL, vip_intimate_haircut: ALL, vip_breast_size: ALL,
@@ -41,7 +42,7 @@ const EXTRA_DEFAULT = { intent: ALL, kids: ALL, smoking: ALL, drinking: ALL, rel
   vip_price1h_min: "", vip_price1h_max: "", vip_price2h_min: "", vip_price2h_max: "", vip_price3h_min: "", vip_price3h_max: "" };
 
 // Premium-Lite tier filters (looking for, distance, available on date, date price up to)
-const LITE_DEFAULT = { intent: ALL, max_distance: "", available_date: "", max_date_price: "" };
+const LITE_DEFAULT = { intent: [], max_distance: "", available_date: "", max_date_price: "", video_calls: false };
 // Full Premium filters = everything else in EXTRA_DEFAULT + search by name
 const PREMIUM_DEFAULT = Object.fromEntries(Object.entries({ ...EXTRA_DEFAULT, q: "" }).filter(([k]) => !(k in LITE_DEFAULT)));
 
@@ -60,6 +61,25 @@ function FilterSelect({ testid, field, value, options, onChange, lang, label, la
           {options.map(o => <SelectItem key={o} value={o}>{labelFn ? labelFn(o) : optLabel(field, o, lang)}</SelectItem>)}
         </SelectContent>
       </Select>
+    </div>
+  );
+}
+function FilterMultiSelect({ testid, field, value, options, onChange, lang, label, labelFn }) {
+  return (
+    <div className="min-w-[200px]">
+      <label className="text-xs text-slate-400">{label}</label>
+      <div className="mt-1">
+        <MultiSelect
+          testid={testid}
+          value={value}
+          onChange={onChange}
+          options={options.map(o => ({ value: o, label: labelFn ? labelFn(o) : optLabel(field, o, lang) }))}
+          placeholder={t("all", lang)}
+          searchPlaceholder={t("search", lang)}
+          emptyText={t("no_results", lang)}
+          accent="rose"
+        />
+      </div>
     </div>
   );
 }
@@ -116,6 +136,10 @@ export default function Browse() {
       if (Array.isArray(params.languages)) { if (params.languages.length) params.language = params.languages.join(","); delete params.languages; }
       if (Array.isArray(params.orientations)) { if (params.orientations.length) params.orientation = params.orientations.join(","); delete params.orientations; }
       if (Array.isArray(params.genders)) { if (params.genders.length) params.genders = params.genders.join(","); else delete params.genders; }
+      if (Array.isArray(params.intent)) { if (params.intent.length) params.intent = params.intent.join(","); else delete params.intent; }
+      ["kids", "smoking", "drinking", "religion", "zodiac"].forEach(k => {
+        if (Array.isArray(params[k])) { if (params[k].length) params[k] = params[k].join(","); else delete params[k]; }
+      });
       Object.keys(params).forEach(k => (params[k] === ALL || params[k] === "" || params[k] == null || params[k] === false) && delete params[k]);
       const { data } = await api.get("/profiles", { params });
       const items = Array.isArray(data) ? data : (data.items || []);
@@ -237,20 +261,47 @@ export default function Browse() {
               )}
               <fieldset disabled={!isLite} data-testid="premium-lite-filters-controls" className={`border-0 p-0 m-0 min-w-0 ${!isLite ? "opacity-60 select-none" : ""}`}>
                 <div className="flex flex-wrap gap-3 items-end">
-                  <FilterSelect testid="filter-intent-select" field="relationship_intent" label={t("relationship_intent", lang)} value={filters.intent} options={INTENTS} onChange={v => setFilters({ ...filters, intent: v })} lang={lang} />
-                  <div className="min-w-[150px]">
-                    <label className="text-xs text-slate-400">{t("distance_label", lang)}</label>
-                    <Select value={filters.max_distance ? String(filters.max_distance) : ALL} onValueChange={v => setFilters({ ...filters, max_distance: v === ALL ? "" : parseInt(v) })} disabled={!isLite || !hasCoords}>
-                      <SelectTrigger data-testid="profile-distance-filter-select" className="bg-white/5 border-white/10 mt-1" title={!hasCoords ? t("location_needed_for_distance", lang) : undefined}><SelectValue /></SelectTrigger>
-                      <SelectContent className="bg-[#161320] border-white/10 text-white">
-                        <SelectItem value={ALL}>{t("any_distance", lang)}</SelectItem>
-                        {RADII.map(r => <SelectItem key={r} value={String(r)}>{t("within_km", lang).replace("{n}", r)}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                  <div className="min-w-[220px]">
+                    <label className="text-xs text-slate-400">{t("relationship_intent", lang)}</label>
+                    <div className="mt-1">
+                      <MultiSelect
+                        testid="filter-intent-select"
+                        value={filters.intent}
+                        onChange={v => setFilters({ ...filters, intent: v })}
+                        options={INTENTS.map(o => ({ value: o, label: optLabel("relationship_intent", o, lang) }))}
+                        placeholder={t("all", lang)}
+                        searchPlaceholder={t("search", lang)}
+                        emptyText={t("no_results", lang)}
+                        accent="rose"
+                      />
+                    </div>
+                  </div>
+                  <div className="min-w-[230px] flex-1 max-w-[340px] pb-0.5" title={!hasCoords ? t("location_needed_for_distance", lang) : undefined}>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-400">{t("distance_label", lang)}</span>
+                      <span data-testid="profile-distance-filter-value" className={`font-mono-num ${filters.max_distance ? "text-rose-200" : "text-slate-500"}`}>
+                        {filters.max_distance ? t("within_km", lang).replace("{n}", filters.max_distance) : t("any_distance", lang)}
+                      </span>
+                    </div>
+                    <SliderPrimitive.Root
+                      data-testid="profile-distance-filter-slider"
+                      className="relative flex w-full touch-none select-none items-center h-9 mt-1 data-[disabled]:opacity-50"
+                      min={0} max={300} step={5}
+                      value={[filters.max_distance ? Number(filters.max_distance) : 0]}
+                      disabled={!isLite || !hasCoords}
+                      onValueChange={([v]) => setFilters({ ...filters, max_distance: v <= 0 ? "" : v })}
+                    >
+                      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-white/10">
+                        <SliderPrimitive.Range className="absolute h-full bg-gradient-to-r from-rose-500 to-rose-400" />
+                      </SliderPrimitive.Track>
+                      <SliderPrimitive.Thumb data-testid="profile-distance-filter-thumb" aria-label={t("distance_label", lang)}
+                        className="block h-5 w-5 rounded-full border-2 border-rose-400 bg-[#161320] shadow-[0_0_0_4px_rgba(244,63,94,0.15)] transition-[box-shadow,background-color] hover:bg-rose-500/30 focus-visible:outline-none focus-visible:shadow-[0_0_0_6px_rgba(244,63,94,0.3)] cursor-grab active:cursor-grabbing" />
+                    </SliderPrimitive.Root>
                   </div>
                   <div className="min-w-[150px]"><label className="text-xs text-slate-400">{t("available_on_date", lang)}</label>
                     <Input data-testid="filter-available-date-input" type="date" value={filters.available_date} onChange={e => setFilters({ ...filters, available_date: e.target.value })} className="bg-white/5 border-white/10 mt-1" /></div>
                   <NumInput testid="filter-max-date-price-input" label={t("max_date_price", lang)} min="0" value={filters.max_date_price} onChange={v => setFilters({ ...filters, max_date_price: v })} />
+                  <Toggle testid="filter-video-calls" label={`📹 ${t("video_calls_available", lang)}`} checked={filters.video_calls} onChange={v => setFilters({ ...filters, video_calls: v })} />
                   {isLite && <Button data-testid="premium-lite-filters-reset" variant="ghost" onClick={() => setFilters({ ...filters, ...LITE_DEFAULT })} className="text-slate-400 hover:text-white ms-auto">{t("reset", lang)}</Button>}
                 </div>
               </fieldset>
@@ -292,10 +343,10 @@ export default function Browse() {
                     />
                   </div>
                 </div>
-                <FilterSelect testid="filter-kids-select" field="kids" label={t("kids", lang)} value={filters.kids} options={KIDS} onChange={v => setFilters({ ...filters, kids: v })} lang={lang} />
-                <FilterSelect testid="filter-smoking-select" field="smoking" label={t("smoking", lang)} value={filters.smoking} options={HABITS} onChange={v => setFilters({ ...filters, smoking: v })} lang={lang} />
-                <FilterSelect testid="filter-drinking-select" field="drinking" label={t("drinking", lang)} value={filters.drinking} options={HABITS} onChange={v => setFilters({ ...filters, drinking: v })} lang={lang} />
-                <FilterSelect testid="filter-religion-select" field="religion" label={t("religion", lang)} value={filters.religion} options={RELIGIONS.filter(r => r !== "prefer_not")} onChange={v => setFilters({ ...filters, religion: v })} lang={lang} />
+                <FilterMultiSelect testid="filter-kids-select" field="kids" label={t("kids", lang)} value={filters.kids} options={KIDS} onChange={v => setFilters({ ...filters, kids: v })} lang={lang} />
+                <FilterMultiSelect testid="filter-smoking-select" field="smoking" label={t("smoking", lang)} value={filters.smoking} options={HABITS} onChange={v => setFilters({ ...filters, smoking: v })} lang={lang} />
+                <FilterMultiSelect testid="filter-drinking-select" field="drinking" label={t("drinking", lang)} value={filters.drinking} options={HABITS} onChange={v => setFilters({ ...filters, drinking: v })} lang={lang} />
+                <FilterMultiSelect testid="filter-religion-select" field="religion" label={t("religion", lang)} value={filters.religion} options={RELIGIONS.filter(r => r !== "prefer_not")} onChange={v => setFilters({ ...filters, religion: v })} lang={lang} />
                 <RangeSlider testid="filter-income-range" label={`${t("income", lang)} $/month`} min={0} max={50000} step={500} lo={filters.min_income} hi={filters.max_income} anyLabel={t("all", lang)}
                   format={v => `$${v >= 1000 ? (v / 1000).toLocaleString("en-US", { maximumFractionDigits: 1 }) + "k" : v}`}
                   onChange={(a, b) => setFilters(f => ({ ...f, min_income: a, max_income: b }))} />
@@ -314,7 +365,7 @@ export default function Browse() {
                     />
                   </div>
                 </div>
-                <FilterSelect testid="filter-zodiac-select" field="zodiac" label={t("zodiac", lang)} value={filters.zodiac} options={ZODIAC_SIGNS} labelFn={z => `${ZODIAC_EMOJI[z] || ""} ${t("zod_" + z, lang)}`} onChange={v => setFilters({ ...filters, zodiac: v })} lang={lang} />
+                <FilterMultiSelect testid="filter-zodiac-select" field="zodiac" label={t("zodiac", lang)} value={filters.zodiac} options={ZODIAC_SIGNS} labelFn={z => `${ZODIAC_EMOJI[z] || ""} ${t("zod_" + z, lang)}`} onChange={v => setFilters({ ...filters, zodiac: v })} lang={lang} />
               </div>
               <div className="flex flex-wrap gap-3 items-end">
                 <RangeSlider testid="filter-height-range" label={t("height", lang)} min={100} max={250} lo={filters.min_height} hi={filters.max_height} anyLabel={t("all", lang)} onChange={(a, b) => setFilters(f => ({ ...f, min_height: a, max_height: b }))} />
@@ -348,7 +399,6 @@ export default function Browse() {
                 <Toggle testid="filter-online-now" label={`🟢 ${t("online_now", lang)}`} checked={filters.online_now} onChange={v => setFilters({ ...filters, online_now: v })} />
                 <Toggle testid="filter-with-photos" label={`📷 ${t("with_photos", lang)}`} checked={filters.with_photos} onChange={v => setFilters({ ...filters, with_photos: v })} />
                 <Toggle testid="filter-verified-only" label={`✅ ${t("verified_only", lang)}`} checked={filters.verified_only} onChange={v => setFilters({ ...filters, verified_only: v })} />
-                <Toggle testid="filter-video-calls" label={`📹 ${t("video_calls_available", lang)}`} checked={filters.video_calls} onChange={v => setFilters({ ...filters, video_calls: v })} />
                 {isPremiumFull && <Button data-testid="profile-filters-reset-button" variant="ghost" onClick={() => setFilters({ ...filters, ...PREMIUM_DEFAULT })} className="text-slate-400 hover:text-white ms-auto">{t("reset", lang)}</Button>}
               </div>
               </fieldset>
