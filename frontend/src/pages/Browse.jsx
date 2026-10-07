@@ -286,7 +286,7 @@ export default function Browse() {
                     <SliderPrimitive.Root
                       data-testid="profile-distance-filter-slider"
                       className="relative flex w-full touch-none select-none items-center h-9 mt-1 data-[disabled]:opacity-50"
-                      min={0} max={300} step={5}
+                      min={0} max={1000} step={5}
                       value={[filters.max_distance ? Number(filters.max_distance) : 0]}
                       disabled={!isLite || !hasCoords}
                       onValueChange={([v]) => setFilters({ ...filters, max_distance: v <= 0 ? "" : v })}
